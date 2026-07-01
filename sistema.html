@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISGO System - Seguros</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #f8fafc;
+            --sidebar-bg: #0f172a;
+            --sidebar-text: #94a3b8;
+            --sidebar-active: #38bdf8;
+            --card-bg: #ffffff;
+            --text-dark: #1e293b;
+            --text-muted: #64748b;
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #22c55e;
+            --border: #e2e8f0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-main); color: var(--text-dark); display: flex; height: 100vh; overflow: hidden; }
+
+        /* PANTALLA DE LOGIN */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
+        }
+        .login-card {
+            background: white; padding: 2.5rem; border-radius: 16px; width: 100%; max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); text-align: center;
+        }
+        .login-card h1 { color: var(--primary); font-size: 2rem; margin-bottom: 0.5rem; font-weight: 700; }
+        .login-card p { color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+        /* STRUCTURA PRINCIPAL */
+        #main-app { display: none; width: 100%; height: 100%; }
+        
+        /* BARRA LATERAL */
+        .sidebar {
+            width: 260px; background-color: var(--sidebar-bg); height: 100%;
+            display: flex; flex-direction: column; justify-content: space-between; padding: 1.5rem 1rem;
+        }
+        .brand { color: white; font-size: 1.4rem; font-weight: 700; text-align: center; margin-bottom: 2rem; border-bottom: 1px solid #334155; padding-bottom: 1rem; }
+        .brand span { color: var(--sidebar-active); }
+        .menu-btn {
+            background: none; border: none; color: var(--sidebar-text); width: 100%; text-align: left;
+            padding: 0.75rem 1rem; font-size: 0.95rem; border-radius: 8px; cursor: pointer;
+            margin-bottom: 0.5rem; display: flex; align-items: center; transition: all 0.2s;
+        }
+        .menu-btn:hover, .menu-btn.active { background: #1e293b; color: white; }
+        .menu-btn.active { border-left: 4px solid var(--sidebar-active); color: var(--sidebar-active); }
+        .logout-btn { background: #ef4444; color: white; margin-top: auto; }
+        .logout-btn:hover { background: #dc2626; }
+
+        /* CONTENIDO PRINCIPAL */
+        .content { flex: 1; padding: 2rem; overflow-y: auto; height: 100%; }
+        .view-panel { display: none; }
+        .view-panel.active { display: block; }
+
+        header h2 { font-size: 1.8rem; font-weight: 700; margin-bottom: 0.25rem; }
+        header p { color: var(--text-muted); margin-bottom: 1.5rem; }
+
+        /* COMPONENTES */
+        .grid-dashboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .stat-card h3 { font-size: 0.9rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; }
+        .stat-card .value { font-size: 1.8rem; font-weight: 700; color: var(--text-dark); }
+        
+        .progress-container { background: #e2e8f0; border-radius: 8px; height: 12px; width: 100%; margin-top: 0.5rem; overflow: hidden; }
+        .progress-bar { background: var(--success); height: 100%; width: 0%; transition: width 0.4s ease; }
+
+        .card { background: white; padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1.5rem; }
+        .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-muted); margin-bottom: 0.25rem; }
+        input, select, textarea { width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; outline: none; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary); }
+
+        button { background: var(--primary); color: white; border: none; padding: 0.6rem 1.2rem; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        button:hover { background: var(--primary-hover); }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; text-align: left; font-size: 0.9rem; }
+        th, td { padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; color: var(--text-muted); font-weight: 600; }
+
+        /* SIMULADOR WHATSAPP */
+        .wa-flex { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; }
+        .phone-mockup { background: #e5ddd5; border: 12px solid #334155; border-radius: 24px; height: 450px; display: flex; flex-direction: column; position: relative; }
+        .phone-header { background: #075e54; color: white; padding: 0.75rem; font-size: 0.85rem; font-weight: 600; text-align: center; }
+        .phone-body { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; justify-content: flex-end; }
+        .chat-bubble { background: #d9fdd3; padding: 0.75rem; border-radius: 8px; font-size: 0.85rem; max-width: 85%; align-self: flex-end; box-shadow: 0 1px 1px rgba(0,0,0,0.1); white-space: pre-wrap; margin-top: auto; }
+    </style>
+</head>
+<body>
+
+    <!-- PANTALLA LOGIN -->
+    <div id="login-screen">
+        <div class="login-card">
+            <h1>ISGO <span>System</span></h1>
+            <p>Acceso Seguro para Agentes de Seguros</p>
+            <form onsubmit="login(event)">
+                <div class="form-group" style="text-align: left;">
+                    <label>Usuario de Demostración</label>
+                    <input type="text" id="username" value="admin" required>
+                </div>
+                <div class="form-group" style="text-align: left;">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" value="1234" required>
+                </div>
+                <button type="submit" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem;">Entrar al Sistema</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- APLICACIÓN GENERAL -->
+    <div id="main-app">
+        <!-- BARRA LATERAL -->
+        <div class="sidebar">
+            <div>
+                <div class="brand">ISGO <span>System</span></div>
+                <button class="menu-btn active" onclick="switchView('dashboard', this)">📈 Dashboard</button>
+                <button class="menu-btn" onclick="switchView('seguros', this)">🛡️ Catálogo Seguros</button>
+                <button class="menu-btn" onclick="switchView('clientes', this)">👥 Mis Clientes</button>
+                <button class="menu-btn" onclick="switchView('plantillas', this)">📝 Plantillas WA</button>
+                <button class="menu-btn" onclick="switchView('whatsapp', this)">🚀 Envíos Express</button>
+            </div>
+            <button class="menu-btn logout-btn" onclick="logout()">🚪 Cerrar Sesión</button>
+        </div>
+
+        <!-- CONTENIDOS -->
+        <div class="content">
+            
+            <!-- PANEL: DASHBOARD -->
+            <div id="dashboard" class="view-panel active">
+                <header>
+                    <h2>Panel de Control General</h2>
+                    <p>Métricas comerciales clave calculadas en tiempo real.</p>
+                </header>
+                <div class="grid-dashboard">
+                    <div class="stat-card">
+                        <h3>Cartera Total Recaudada (Mensual)</h3>
+                        <div class="value" id="dash-ingresos">$0.00 MXN</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Clientes Activos</h3>
+                        <div class="value" id="dash-clientes">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Meta de Ventas del Mes</h3>
+                        <div style="display:flex; justify-content:space-between; font-size:0.85rem; color:var(--text-muted);">
+                            <span>Progreso hacia $50,000 MXN</span>
+                            <span id="meta-porcentaje">0%</span>
+                        </div>
+                        <div class="progress-container">
+                            <div class="progress-bar" id="meta-bar"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3>¿Por qué ISGO es mejor que Odoo?</h3>
+                    <p style="margin-top:0.5rem; color:var(--text-muted); line-height:1.5;">
+                        A diferencia de Odoo, que te exige configurar almacenes falsos y productos complejos para simular intangibles, ISGO System está diseñado desde la raíz para el sector de seguros. Calcula tu prima neta recaudada al instante y automatiza el seguimiento de renovaciones sin configuraciones engorrosas.
+                    </p>
+                </div>
+            </div>
+
+            <!-- PANEL: CATALOGO SEGUROS -->
+            <div id="seguros" class="view-panel">
+                <header>
+                    <h2>Catálogo de Seguros Ofertados</h2>
+                    <p>Administra los tipos de póliza que manejas con las aseguradoras.</p>
+                </header>
+                <div class="card">
+                    <form id="form-seguro" onsubmit="agregarSeguro(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre del Seguro</label>
+                                <input type="text" id="seg-nombre" placeholder="Ej. Seguro de Auto Cobertura Amplia" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Aseguradora Provedora</label>
+                                <input type="text" id="seg-compania" placeholder="Ej. AXA, GNP, Quálitas" required>
+                            </div>
+                        </div>
+                        <button type="submit">Agregar Seguro al Portafolio</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Seguros Disponibles</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Nombre del Plan</th><th>Aseguradora</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="tabla-seguros"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL: CLIENTES -->
+            <div id="clientes" class="view-panel">
+                <header>
+                    <h2>Directorio Inteligente de Clientes</h2>
+                    <p>Registra datos personales, pólizas asignadas y flujos económicos.</p>
+                </header>
+                <div class="card">
+                    <form id="form-cliente" onsubmit="agregarCliente(event)">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre Completo</label>
+                                <input type="text" id="cli-nombre" placeholder="Ej. Carlos Mendoza" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono (WhatsApp - Con Lada sin +)</label>
+                                <input type="tel" id="cli-telefono" placeholder="Ej. 526391234567" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Póliza Asignada</label>
+                                <select id="cli-seguro-select" required></select>
+                            </div>
+                            <div class="form-group">
+                                <label>Costo de la Mensualidad / Prima ($ MXN)</label>
+                                <input type="number" id="cli-pago" placeholder="Ej. 2450" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cumpleaños</label>
+                                <input type="date" id="cli-cumple" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Próxima Fecha de Renovación</label>
+                                <input type="date" id="cli-renovacion" required>
+                            </div>
+                        </div>
+                        <button type="submit">Guardar Cliente</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Clientes en Cartera</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Nombre</th><th>Teléfono</th><th>Póliza</th><th>Pago Mensual</th><th>Renovación</th><th>Acción</th></tr>
+                        </thead>
+                        <tbody id="tabla-clientes"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL: PLANTILLAS -->
+            <div id="plantillas" class="view-panel">
+                <header>
+                    <h2>Gestor de Plantillas de Mensajes</h2>
+                    <p>Crea mensajes dinámicos usando automatizadores entre llaves.</p>
+                </header>
+                <div class="card">
+                    <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                        Variables admitidas: <b style="color:var(--primary)">{{nombre}}</b> | <b style="color:var(--primary)">{{seguro}}</b> | <b style="color:var(--primary)">{{pago}}</b> | <b style="color:var(--primary)">{{renovacion}}</b>
+                    </p>
+                    <form id="form-plantilla" onsubmit="agregarPlantilla(event)">
+                        <div class="form-group">
+                            <label>Identificador o Título</label>
+                            <input type="text" id="plan-titulo" placeholder="Ej. Cobro de Mensualidad" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cuerpo del Mensaje</label>
+                            <textarea id="plan-mensaje" rows="4" placeholder="Hola {{nombre}}, te recordamos el pago de tu {{seguro}} por ${{pago}} antes de su vencimiento." required></textarea>
+                        </div>
+                        <button type="submit">Guardar Plantilla</button>
+                    </form>
+                </div>
+                <div class="card">
+                    <h3>Mis Plantillas</h3>
+                    <table>
+                        <thead>
+                            <tr><th>Título</th><th>Contenido Estructurado</th><th>Acción</th></tr>
+                        </thead>
+                        <tbody id="tabla-plantillas"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PANEL: ENVIOS WHATSAPP -->
+            <div id="whatsapp" class="view-panel">
+                <header>
+                    <h2>Centro de Envío Inteligente por WhatsApp</h2>
+                    <p>Cruza información de clientes con plantillas en un solo clic.</p>
+                </header>
+                <div class="wa-flex">
+                    <div class="card">
+                        <div class="form-group">
+                            <label>Paso 1: Elige al Cliente Destinatario</label>
+                            <select id="wa-cliente" onchange="procesarMensajeWhatsApp()">
+                                <option value="">-- Seleccionar Cliente --</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Paso 2: Elige la Plantilla de Notificación</label>
+                            <select id="wa-plantilla" onchange="procesarMensajeWhatsApp()">
+                                <option value="">-- Seleccionar Plantilla --</option>
+                            </select>
+                        </div>
+                        <button class="logout-btn" id="wa-btn" onclick="lanzarWhatsApp()" style="background:var(--success); width:100%; padding:0.8rem; margin-top:1.5rem; display:none;">
+                            💬 Despachar Mensaje vía WhatsApp Web
+                        </button>
+                    </div>
+
+                    <!-- MOCKUP TELEFONO -->
+                    <div class="phone-mockup">
+                        <div class="phone-header">Vista Previa (ISGO Outbox)</div>
+                        <div class="phone-body">
+                            <div class="chat-bubble" id="wa-preview">Elige un cliente y una plantilla para previsualizar el mensaje...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Inicializar datos semilla si no existen
+        if(!localStorage.getItem('isgo_seguros')) {
+            localStorage.setItem('isgo_seguros', JSON.stringify([
+                {id: 1, nombre: 'GNP Vida Plena', compania: 'GNP'},
+                {id: 2, nombre: 'AXA Auto Confort', compania: 'AXA'}
+            ]));
+        }
+        if(!localStorage.getItem('isgo_clientes')) {
+            localStorage.setItem('isgo_clientes', JSON.stringify([
+                {id: 1, nombre: 'Sofía Rodríguez', telefono: '526391234567', seguro: 'GNP Vida Plena', pago: 3200, cumple: '1994-04-10', renovacion: '2026-09-18'},
+                {id: 2, nombre: 'Juan Ortiz', telefono: '526398765432', seguro: 'AXA Auto Confort', pago: 1850, cumple: '1990-12-05', renovacion: '2026-07-25'}
+            ]));
+        }
+        if(!localStorage.getItem('isgo_plantillas')) {
+            localStorage.setItem('isgo_plantillas', JSON.stringify([
+                {id: 1, titulo: 'Recordatorio Cobro', mensaje: 'Hola {{nombre}}, te recordamos que el pago de tu póliza de {{seguro}} es de ${{pago}}. La fecha límite es el {{renovacion}}.'},
+                {id: 2, titulo: 'Cumpleaños', mensaje: '¡Feliz cumpleaños {{nombre}}! 🎂 Esperamos que pases un excelente día. Un fuerte abrazo de parte de tu agente de seguros.'}
+            ]));
+        }
+
+        // CONTROL DE SESIÓN
+        function login(e) {
+            e.preventDefault();
+            if(document.getElementById('username').value === 'admin' && document.getElementById('password').value === '1234') {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('main-app').style.display = 'flex';
+                inicializarSistema();
+            } else { alert('Credenciales incorrectas'); }
+        }
+        function logout() {
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('main-app').style.display = 'none';
+        }
+
+        // MANEJO DE VISTAS
+        function switchView(viewId, btn) {
+            document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(viewId).classList.add('active');
+            btn.classList.add('active');
+            inicializarSistema(); // Recalcula o actualiza listas por si hubo cambios
+        }
+
+        // LÓGICA DEL CORE
+        function getData(key) { return JSON.parse(localStorage.getItem(key)) || []; }
+        function saveData(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+
+        function inicializarSistema() {
+            renderDashboard();
+            renderSeguros();
+            renderClientes();
+            renderPlantillas();
+            actualizarSelectores();
+        }
+
+        function renderDashboard() {
+            const clientes = getData('isgo_clientes');
+            document.getElementById('dash-clientes').innerText = clientes.length;
+            
+            const totalRecaudado = clientes.reduce((sum, c) => sum + parseFloat(c.pago || 0), 0);
+            document.getElementById('dash-ingresos').innerText = `$${totalRecaudado.toLocaleString('es-MX')} MXN`;
+
+            const meta = 50000;
+            const porcentaje = Math.min((totalRecaudado / meta) * 100, 100).toFixed(1);
+            document.getElementById('meta-porcentaje').innerText = `${porcentaje}%`;
+            document.getElementById('meta-bar').style.width = `${porcentaje}%`;
+        }
+
+        function renderSeguros() {
+            const seguros = getData('isgo_seguros');
+            const tbody = document.getElementById('tabla-seguros');
+            tbody.innerHTML = '';
+            seguros.forEach(s => {
+                tbody.innerHTML += `<tr><td>${s.nombre}</td><td>${s.compania}</td><td><button style="background:#ef4444;" onclick="borrarElemento('isgo_seguros', ${s.id})">Borrar</button></td></tr>`;
+            });
+        }
+
+        function agregarSeguro(e) {
+            e.preventDefault();
+            const seguros = getData('isgo_seguros');
+            seguros.push({
+                id: Date.now(),
+                nombre: document.getElementById('seg-nombre').value,
+                compania: document.getElementById('seg-compania').value
+            });
+            saveData('isgo_seguros', seguros);
+            document.getElementById('form-seguro').reset();
+            renderSeguros();
+            actualizarSelectores();
+        }
+
+        function renderClientes() {
+            const clientes = getData('isgo_clientes');
+            const tbody = document.getElementById('tabla-clientes');
+            tbody.innerHTML = '';
+            clientes.forEach(c => {
+                tbody.innerHTML += `<tr>
+                    <td><b>${c.nombre}</b></td>
+                    <td>${c.telefono}</td>
+                    <td>${c.seguro}</td>
+                    <td>$${parseFloat(c.pago).toLocaleString('es-MX')}</td>
+                    <td>${c.renovacion}</td>
+                    <td><button style="background:#ef4444;" onclick="borrarElemento('isgo_clientes', ${c.id})">Borrar</button></td>
+                </tr>`;
+            });
+        }
+
+        function agregarCliente(e) {
+            e.preventDefault();
+            const clientes = getData('isgo_clientes');
+            clientes.push({
+                id: Date.now(),
+                nombre: document.getElementById('cli-nombre').value,
+                telefono: document.getElementById('cli-telefono').value,
+                seguro: document.getElementById('cli-seguro-select').value,
+                pago: parseFloat(document.getElementById('cli-pago').value),
+                cumple: document.getElementById('cli-cumple').value,
+                renovacion: document.getElementById('cli-renovacion').value
+            });
+            saveData('isgo_clientes', clientes);
+            document.getElementById('form-cliente').reset();
+            renderClientes();
+        }
+
+        function renderPlantillas() {
+            const plantillas = getData('isgo_plantillas');
+            const tbody = document.getElementById('tabla-plantillas');
+            tbody.innerHTML = '';
+            plantillas.forEach(p => {
+                tbody.innerHTML += `<tr><td><b>${p.titulo}</b></td><td>${p.mensaje}</td><td><button style="background:#ef4444;" onclick="borrarElemento('isgo_plantillas', ${p.id})">Borrar</button></td></tr>`;
+            });
+        }
+
+        function agregarPlantilla(e) {
+            e.preventDefault();
+            const plantillas = getData('isgo_plantillas');
+            plantillas.push({
+                id: Date.now(),
+                titulo: document.getElementById('plan-titulo').value,
+                mensaje: document.getElementById('plan-mensaje').value
+            });
+            saveData('isgo_plantillas', plantillas);
+            document.getElementById('form-plantilla').reset();
+            renderPlantillas();
+            actualizarSelectores();
+        }
+
+        function borrarElemento(key, id) {
+            const filtrados = getData(key).filter(item => item.id !== id);
+            saveData(key, filtrados);
+            inicializarSistema();
+        }
+
+        function actualizarSelectores() {
+            const seguros = getData('isgo_seguros');
+            const selectSeg = document.getElementById('cli-seguro-select');
+            selectSeg.innerHTML = '';
+            seguros.forEach(s => selectSeg.innerHTML += `<option value="${s.nombre}">${s.nombre} (${s.compania})</option>`);
+
+            const clientes = getData('isgo_clientes');
+            const selectCli = document.getElementById('wa-cliente');
+            selectCli.innerHTML = '<option value="">-- Seleccionar Cliente --</option>';
+            clientes.forEach(c => selectCli.innerHTML += `<option value="${c.id}">${c.nombre}</option>`);
+
+            const plantillas = getData('isgo_plantillas');
+            const selectPlan = document.getElementById('wa-plantilla');
+            selectPlan.innerHTML = '<option value="">-- Seleccionar Plantilla --</option>';
+            plantillas.forEach(p => selectPlan.innerHTML += `<option value="${p.id}">${p.titulo}</option>`);
+        }
+
+        // LÓGICA INTEGRADA DE ENVIÓ WHATSAPP
+        let msgFinal = "";
+        let telFinal = "";
+
+        function procesarMensajeWhatsApp() {
+            const cId = document.getElementById('wa-cliente').value;
+            const pId = document.getElementById('wa-plantilla').value;
+            const preview = document.getElementById('wa-preview');
+            const btn = document.getElementById('wa-btn');
+
+            if(!cId || !pId) {
+                preview.innerText = "Elige un cliente y una plantilla para previsualizar el mensaje...";
+                btn.style.display = "none";
+                return;
+            }
+
+            const cliente = getData('isgo_clientes').find(c => c.id == cId);
+            const plantilla = getData('isgo_plantillas').find(p => p.id == pId);
+
+            let texto = plantilla.mensaje;
+            texto = texto.replace(/{{nombre}}/g, cliente.nombre);
+            texto = texto.replace(/{{seguro}}/g, cliente.seguro);
+            texto = texto.replace(/{{pago}}/g, cliente.pago);
+            texto = texto.replace(/{{renovacion}}/g, cliente.renovacion);
+
+            msgFinal = texto;
+            telFinal = cliente.telefono;
+
+            preview.innerText = texto;
+            btn.style.display = "block";
+        }
+
+        function lanzarWhatsApp() {
+            if(!telFinal || !msgFinal) return;
+            const url = `https://wa.me/${telFinal}?text=${encodeURIComponent(msgFinal)}`;
+            window.open(url, '_blank');
+        }
+    </script>
+</body>
+</html>
